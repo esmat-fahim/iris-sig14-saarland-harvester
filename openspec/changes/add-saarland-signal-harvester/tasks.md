@@ -5,7 +5,8 @@
 - [x] Locate and manually inspect public UVP-Verbund Saarland HTML search and 3 real GreenSteel approval detail pages.
 - [x] Record distinct listing and decision dates, and explicitly mark publication dates unverified.
 - [x] Implement bounded live raw-HTML capture command, capture provenance manifest and conditional regression test.
-- [ ] Run capture on candidate Mac, review/retain actual HTML and pass the unskipped real-DOM regression test.
+- [x] Run real public HTML capture on candidate Mac and locally pass the unskipped real-DOM regression test (candidate-reported `16 passed`; snapshots are local-only).
+- [ ] Review captured HTML for personal data and redistribution conditions; decide whether to commit a permissible minimized fixture or retain full pages privately.
 
 ## Ingestion
 - [x] Add config/CLI, HTTP host restrictions, retries, timeout and bounded pagination.
@@ -37,5 +38,6 @@
 - [x] Record candidate's direct HTTP 200 checks of Geoportal OGC API Features industrial-installation lists without inventing approval dates.
 - [x] Update quality handoff documentation to reflect candidate's successful live HTML/PostGIS runs rather than obsolete inaccessible-runtime wording.
 - [x] Add optional automated consistency validation for the two candidate-generated live JSONL/report artifacts.
-- [ ] Review and commit both candidate-generated `samples/live_output.jsonl` and `samples/live_quality.json` from the Mac; they are not accessible in the authoring environment.
-- [ ] Capture actual UVP HTML on the Mac, review potential personal information, pass the non-skipped HTML regression test, and determine what may be redistributed.
+- [x] Review and commit candidate-generated `samples/live_output.jsonl` and `samples/live_quality.json` from the Mac (commit `1f04f6e`).
+- [x] Capture actual UVP HTML on the Mac and pass non-skipped HTML regression test locally (candidate-reported 16 passed).
+- [ ] Inspect captured HTML and document the redistribution decision; do not automatically commit full source pages.

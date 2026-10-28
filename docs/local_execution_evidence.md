@@ -22,7 +22,9 @@ These results are transcribed from the candidate's terminal output and are **not
 - Report: `evidence_mode=live_public_html`; official external UVP application and Geoportal substation capacity application listed. No direct Geoportal HTML approval listing verified within inspected pages, and no legal approval record derived from the capacity map.
 
 ## Unresolved work
-- Capture and review *actual* UVP HTML and run unskipped regression test (`python -m iris_sig14.capture_live`). The original committed fixtures are reconstructed HTML.
+- Candidate ran `python -m iris_sig14.capture_live --directory tests/fixtures/live_uvp --max-details 3 --delay 2` on the Mac; terminal summary recorded `captured_at_utc=2026-10-28T15:48:03.312204+00:00`, `discovered_listing_count=10`, `eligible_listing_count=3`, and `saved_details_count=3`.
+- Candidate subsequently reported `pytest -q -rs`: **16 passed** locally, including the real-DOM regression test activated by the saved snapshot. This is a user-reported local result; the raw HTML and test log have not been independently inspected in this environment. Existing committed `tests/fixtures/listing*.html` remain **reconstructed**, not genuine downloaded DOM.
+- Review downloaded HTML for personal/contact data and reuse restrictions before deciding whether to publish it. An offline local passing test does not automatically make the raw HTML suitable for redistribution.
 - Confirm one **real standalone Saarland substation approval** if available; do not infer it from existing infrastructure capacity.
 - Check actual IRIS production staging table contract and independently validate external OpenSpec CLI if applicable.
 
@@ -32,4 +34,4 @@ The candidate ran Python `requests` against the **original** Geoportal's HTML fe
 
 ## Evidence publication state
 
-The two candidate-produced local files `samples/live_output.jsonl` and `samples/live_quality.json` have not yet been observed in the GitHub repository at this documentation update. Once added, the optional `tests/test_live_evidence.py` check becomes active. The authentic HTML capture manifest and snapshots are likewise absent from GitHub and require candidate capture/review.
+Candidate committed `samples/live_output.jsonl` and `samples/live_quality.json` to GitHub in commit `1f04f6e` (2026-10-28). The committed quality report records one live page, 10 discovered, 3 eligible, 7 filtered, no fetch/malformed failures, and a rerun of `written=0, unchanged=3`. The optional `tests/test_live_evidence.py` can now run in CI. Real HTML and `manifest.json` were saved on the candidate Mac to `tests/fixtures/live_uvp/` but were **not** committed at this documentation update; CI may still skip the local-only real-DOM test.

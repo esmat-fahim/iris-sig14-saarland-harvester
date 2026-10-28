@@ -23,14 +23,14 @@ The first-page live result was a successful source/loader smoke test; it does **
 
 - `samples/public_verified_examples.jsonl` is **hand-transcribed public-source evidence**, NOT a recording of the Python live output.
 - `samples/fixture_output.jsonl` and `samples/quality_report.json` are derived from **reconstructed/synthetic** test inputs; their count is four, including one synthetic substation.
-- The candidate's actual `samples/live_output.jsonl` and `samples/live_quality.json` were generated locally but **are not yet checked into GitHub**. Commit them together after inspecting them for unexpected personal information; the repository's optional evidence regression test will then check their consistency.
-- `tests/fixtures/live_uvp/` is intentionally absent until the candidate runs the live capture command. Until the manifest exists, `test_real_live_html_selector_regression` is **skipped**, not passed.
+- `samples/live_output.jsonl` and `samples/live_quality.json` are now **committed actual live-run outputs** (commit `1f04f6e`), not hand-transcribed examples. The quality report shows `written=0, unchanged=3` for a repeated PostgreSQL run; the initial 3 inserts are separately documented in `docs/local_execution_evidence.md`.
+- The candidate captured real HTML on the Mac on 2026-10-28 (one results page, 3 details) and reported **16 passing local tests** with the genuine DOM fixture present. The downloaded `tests/fixtures/live_uvp/` files have **not** been committed, pending privacy/redistribution review; clean CI may skip that particular regression test.
 
 ## Remaining risk register
 
 1. **Original endpoint versus approval event source:** We inspected direct Geoportal HTML/catalogue/facility features; no native dated approval list was confirmed in those surfaces. The rationale is recorded in [`source_selection_adr.md`](source_selection_adr.md). UVP-Verbund is the Geoportal-listed official **external** approval source, not the same host.
 2. **Standalone power substation:** only synthetic test coverage; find a real dated approval or explicitly report this gap to IRIS.
-3. **True raw-HTML parsing:** candidate should capture and test the actual DOM using `python -m iris_sig14.capture_live` and `pytest -q -rs`; do not publish full snapshots without content review.
+3. **True raw-HTML parsing:** live HTML was captured and locally regression-tested (candidate-reported 16 passed). The genuine snapshot remains only on the candidate Mac and should not be made public without reviewing personal/contact information and redistribution permissions.
 4. **Publication dates and project points:** quality flags are expected for the three observed GreenSteel cases.
 5. **IRIS production compatibility:** `sql/001_signal_ingest.sql` is a proposed staging contract and requires reconciliation with the real schema.
 6. **Live operational resilience:** bounded HTTP retries are implemented, but site-side 429/500 scenarios and exhaustive pagination have not been demonstrated end-to-end.

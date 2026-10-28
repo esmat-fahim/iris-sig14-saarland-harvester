@@ -156,7 +156,7 @@ pytest -q
 
 ## Genuine live HTML regression capture (next step)
 
-Previously committed `tests/fixtures/listing*.html` files are **reconstructed**, not verbatim downloaded pages. The new command captures the HTML returned by the real official UVP site, from a network-enabled machine, without modifying either PostGIS database:
+Previously committed `tests/fixtures/listing*.html` files are **reconstructed**, not verbatim downloaded pages. The candidate successfully ran the following capture on 2026-10-28, saving one genuine search page plus three details locally (10 discovered, 3 eligible), without modifying either PostGIS database:
 
 ```bash
 unset DATABASE_URL
@@ -168,7 +168,7 @@ pytest -q -rs
 
 The capture requests exactly **one Saarland search page** and at most **three eligible project detail pages**, with a delay between detail requests and the existing HTTPS host allowlist. It saves a first-page snapshot, individual detail-page snapshots, and `manifest.json` with the actual captured URLs, timestamp (UTC), byte lengths, and SHA-256 checksums. No HTML is fabricated. If no records can be parsed, the capture fails rather than passing silently. No credentials are required.
 
-The `test_real_live_html_selector_regression` test is **skipped** until `tests/fixtures/live_uvp/manifest.json` exists. Once captured, it checks the file checksums, parses the saved actual DOM, compares discovered/eligible counts to the capture manifest, and exercises detail normalization without a network request. A skip does **not** mean the true DOM has been tested.
+The `test_real_live_html_selector_regression` test is **skipped on a checkout lacking** `tests/fixtures/live_uvp/manifest.json` (including clean CI). On the candidate Mac, that manifest was generated and the candidate reported `pytest -q -rs` **16 passed** on 2026-10-28. This is local candidate evidence, not independently replayed from published raw HTML. The regression verifies file checksums, parses the saved DOM, checks listing counts and detail normalization. Genuine captured HTML is still local-only pending review.
 
 **Before publishing the captured snapshot**, inspect the downloaded HTML and ensure redistribution is appropriate, including reviewing public personal/contact data. If sharing full source HTML is not appropriate, keep it local and document it as candidate-held test evidence rather than silently replacing it with a reconstructed example. The command does not claim any standalone substation approval was found; real electrical substation approval coverage is still outstanding.
 
@@ -190,3 +190,7 @@ pytest -q -rs
 `tests/test_live_evidence.py` automatically checks consistency of those two files *when present*, but skips in CI until they have been committed. If one is present without the other, the test fails. Re-running the live harvester after output capture may overwrite the report, so review the final pair together. Neither file should contain database credentials; verify before committing.
 
 To complete **real HTML regression coverage**, run the capture documented above on the candidate Mac and ensure `pytest -q -rs` reports that `test_real_live_html_selector_regression` is no longer skipped. Captured HTML may include public personal/contact information; review it before deciding whether to check the snapshots into a public repository. An uncommitted local capture is evidence of the candidate's test but is not reproducible by a remote reviewer.
+
+## Verified live output evidence
+
+The actual candidate-produced `samples/live_output.jsonl` and `samples/live_quality.json` were committed on 2026-10-28 (commit `1f04f6e`). The report describes a re-run with `written=0, unchanged=3`; initial inserts and source checks are recorded separately in `docs/local_execution_evidence.md`. The engineering justification for using Geoportal's officially linked UVP-Verbund approval application rather than treating Geoportal infrastructure features as dated approvals is maintained in [ADR-001](docs/source_selection_adr.md).
