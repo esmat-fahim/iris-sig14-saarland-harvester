@@ -1,0 +1,13 @@
+schema: spec-driven
+context: |
+  IRIS-SIG-14 take-home exercise, HTML ingestion pattern B.
+  Public-source only. PostgreSQL 16/PostGIS 3.4. Destination iris_staging.signal_ingest.
+  Avoid inventing publication dates or project-level coordinates.
+  Target production DDL is not published; local DDL is a demonstrator contract only.
+rules:
+  proposal:
+    - Explain change in source from Geoportal entrypoint to official UVP-Verbund listings.
+  specs:
+    - Use verifiable SHALL statements with Given/When/Then scenarios.
+  design:
+    - Keep controlled bounded requests and traceability; never geocode ministry mailing addresses.

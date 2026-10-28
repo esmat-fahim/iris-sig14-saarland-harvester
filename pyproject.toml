@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iris-sig14-saarland"
+version = "0.1.0"
+description = "Spec-driven Saarland UVP HTML signal harvester"
+requires-python = ">=3.11"
+dependencies = [
+  "beautifulsoup4>=4.12,<5", "requests>=2.31,<3", "urllib3>=2,<3",
+  "pyproj>=3.6,<4", "SQLAlchemy>=2.0,<3", "psycopg[binary]>=3.1,<4"
+]
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+iris-sig14 = "iris_sig14.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,18 @@
+{
+  "mode": "fixture",
+  "source": "https://www.uvp-verbund.de/freitextsuche?category=chemie%3Banlagen%3Bbauvorhaben%3Benergie%3Bverarbeitung&provider=sl&toggle_procedure=",
+  "pages": 2,
+  "discovered": 6,
+  "eligible": 4,
+  "filtered": 2,
+  "fetch_failures": [],
+  "malformed": [],
+  "quality_flags": {
+    "unresolved_project_point": 3,
+    "publication_date_not_verified": 4,
+    "title_description_site_conflict": 1,
+    "location_text_missing": 1
+  },
+  "duplicates_in_batch": 1,
+  "fixture_notice": "Search result HTML is reconstructed from verified rendered public text; one substation case is wholly synthetic and is NOT an observed public permit."
+}

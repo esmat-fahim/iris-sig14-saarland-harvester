@@ -1,0 +1,19 @@
+# Local demonstration database ONLY. Password supplied from shell via required env.
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: iris_demo
+      POSTGRES_USER: iris_demo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your shell}
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iris_demo -d iris_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+volumes:
+  pgdata:
