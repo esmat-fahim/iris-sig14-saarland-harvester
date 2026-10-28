@@ -90,3 +90,11 @@ def test_network_errors_rejected(monkeypatch):
 def test_malformed_empty_listing():
     assert extract_listing("", BASE_URL) == []
     assert list(list_pages(None, BASE_URL, offline_pages=["<html><body>Nothing</body></html>"])) == []
+
+
+def test_postgres_upsert_coordinates_explicitly_typed():
+    """Regression: NULL coordinate params must have a SQL type in CASE checks."""
+    assert "CASE WHEN CAST(:easting AS double precision) IS NULL" in POSTGRES_UPSERT
+    assert "OR CAST(:northing AS double precision) IS NULL" in POSTGRES_UPSERT
+    assert POSTGRES_UPSERT.count("CAST(:easting AS double precision)") == 2
+    assert POSTGRES_UPSERT.count("CAST(:northing AS double precision)") == 2
