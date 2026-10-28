@@ -187,3 +187,8 @@ I have not recorded an independent successful OpenSpec CLI validation yet; this 
 6. **Production integration:** My staging DDL and local PostGIS demonstration have not been checked against IRIS's private production schema.
 
 I consider the Python implementation, configuration, README, automated tests, sample output, validation queries, quality reporting and source-selection rationale part of this submission. I keep the unresolved source-coverage questions explicit rather than claiming that every acceptance criterion has been demonstrated.
+## License
+
+I release the original code and associated project documentation that I have the right to license under the [MIT License](LICENSE). Copyright (c) 2026 Esmat Tariq Fahim.
+
+This license does **not** grant rights over third-party material, including Saarland Geoportal or UVP-Verbund website content, external datasets, and downloaded source HTML. Those materials remain subject to their respective rights and terms; the original HTML snapshots are not included in this repository.
