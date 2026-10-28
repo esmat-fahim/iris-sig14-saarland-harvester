@@ -1,40 +1,40 @@
-# Quality and error report — reviewer handoff
+# My quality and error report — IRIS-SIG-14
 
-**Evidence date:** 2026-10-28. Separate **candidate-run local observations** from **committed fixture examples**. No connection to an IRIS production database is claimed.
+**Evidence date:** 2026-10-28. I separate actual live ingestion, reconstructed test fixtures, and synthetic data. I did **not** connect to IRIS's production database.
 
-## Live source, local PostgreSQL and results
+## Live ingestion and quality results
 
-On the candidate's Mac, Python 3.12 retrieved the UVP-Verbund Saarland first results page via public HTML (`provider=sl`). Terminal output showed `pages=1`, `discovered=10`, `eligible=3`, `filtered=7`, `duplicates_in_batch=0`, and no reported fetch failures in the displayed summary. The three eligible records were GreenSteel DRI Dillingen, GreenSteel EAF Dillingen and GreenSteel EAF Völklingen GmbH. Their candidate-run local `iris_live` database reported `written=3, unchanged=0` on first insertion and the candidate confirmed unchanged records on rerun. A SQL query displayed the three UUIDs and listing dates. This is local **PostgreSQL 16/PostGIS 3.4** evidence, not an assertion that the IRIS production schema was tested.
+I retrieved one Saarland-filtered UVP-Verbund HTML results page (`provider=sl`), discovering **10 notices**. My classifier accepted **3 industrial approvals** and filtered **7**. I did not observe any fetch failures or malformed records in the captured quality report.
 
-The candidate also tested a **synthetic** substation fixture in local PostGIS, yielding `POINT(354658.795 5464953.74)` at SRID `25832`; it must not be presented as a real approval.
+I loaded the three GreenSteel records into my local **PostgreSQL 16/PostGIS 3.4** `iris_live` database. The initial load wrote 3 records; the repeated load recorded **0 written / 3 unchanged**, as shown in [live_quality.json](../samples/live_quality.json).
 
-## Quality exceptions surfaced by the live run
-
-| Issue | Count | Handling |
+| Quality issue | Count | How I handled it |
 |---|---:|---|
-| `publication_date_not_verified` | 3 | Preserve `NULL`; never confuse listing/decision date with publication date |
-| `unresolved_project_point` | 3 | Preserve `NULL` PostGIS geometry; no city-centroid or authority-address guess |
-| `title_description_site_conflict` | 1 | Flag ambiguous Dillingen/Völklingen text for manual review |
-| `duplicates_in_batch` | 0 | None found on the first live page; primary-key/upsert rerun checks remain applicable |
+| `publication_date_not_verified` | 3 | I preserved `NULL` rather than using a listing or decision date |
+| `unresolved_project_point` | 3 | I preserved `NULL` geometry rather than inventing coordinates |
+| `title_description_site_conflict` | 1 | I flagged the Dillingen/Völklingen discrepancy for manual review |
+| `duplicates_in_batch` | 0 | No duplicate IDs occurred within the first-page live batch |
 
-The first-page live result was a successful source/loader smoke test; it does **not** demonstrate full pagination, complete substation coverage or a reliable official project-level coordinate.
+I validated an EPSG:25832 point using a **synthetic** substation fixture in local PostGIS; I do **not** treat it as a real approved project. My first-page live run is a smoke test, not a claim of complete Saarland coverage.
 
-## Distinguish committed evidence
+## Evidence available in the repository
 
-- `samples/public_verified_examples.jsonl` is **hand-transcribed public-source evidence**, NOT a recording of the Python live output.
-- `samples/fixture_output.jsonl` and `samples/quality_report.json` are derived from **reconstructed/synthetic** test inputs; their count is four, including one synthetic substation.
-- `samples/live_output.jsonl` and `samples/live_quality.json` are now **committed actual live-run outputs** (commit `1f04f6e`), not hand-transcribed examples. The quality report shows `written=0, unchanged=3` for a repeated PostgreSQL run; the initial 3 inserts are separately documented in `docs/local_execution_evidence.md`.
-- The candidate captured real HTML on the Mac on 2026-10-28 (one results page, 3 details) and reported **16 passing local tests** with the genuine DOM fixture present. A local automated contact-detail scan found one email address and two `mailto:` links in each of three detail pages, and one `mailto:` link in the listing page. These counts do not establish whether contacts are private or institutional, nor do they constitute a full content/rights audit. **Packaging decision:** retain the raw snapshots locally rather than redistribute whole pages in a public repo; existing representative reconstructed fixtures remain public. Clean CI may therefore skip the real-DOM test; candidate Mac can run it.
+- I committed the **actual pipeline-generated** [live JSONL](../samples/live_output.jsonl) and [live quality report](../samples/live_quality.json), not manually substituted examples.
+- I retain [hand-transcribed verified examples](../samples/public_verified_examples.jsonl) separately; they are **not** a raw live-run capture.
+- I label [fixture output](../samples/fixture_output.jsonl) and [fixture quality report](../samples/quality_report.json) as reconstructed/synthetic test evidence. This fixture set contains a synthetic substation.
+- I recorded the detailed commands and results in [my execution evidence](local_execution_evidence.md).
 
-## Remaining risk register
+I captured genuine public HTML on my Mac (one listing and three details) and reported **16 locally passing tests**. A limited scan found email/contact links in the downloaded detail pages. I therefore keep the complete HTML **local only** pending fuller privacy and redistribution review. A clean GitHub checkout does not contain those original HTML snapshots and skips that single real-DOM regression test; the published representative fixtures and other tests remain available.
 
-1. **Original endpoint versus approval event source:** We inspected direct Geoportal HTML/catalogue/facility features; no native dated approval list was confirmed in those surfaces. The rationale is recorded in [`source_selection_adr.md`](source_selection_adr.md). UVP-Verbund is the Geoportal-listed official **external** approval source, not the same host.
-2. **Standalone power substation:** only synthetic test coverage; find a real dated approval or explicitly report this gap to IRIS.
-3. **True raw-HTML parsing:** live HTML was captured and locally regression-tested (candidate-reported 16 passed). The genuine snapshot remains only on the candidate Mac and should not be made public without reviewing personal/contact information and redistribution permissions.
-4. **Publication dates and project points:** quality flags are expected for the three observed GreenSteel cases.
-5. **IRIS production compatibility:** `sql/001_signal_ingest.sql` is a proposed staging contract and requires reconciliation with the real schema.
-6. **Live operational resilience:** bounded HTTP retries are implemented, but site-side 429/500 scenarios and exhaustive pagination have not been demonstrated end-to-end.
+## Risks and remaining work
 
-## Reviewer checks
+1. **Source choice:** I investigated Geoportal's own industrial and substation data and selected the officially linked UVP-Verbund approval listing because facility inventory is not an approval event. I document the trade-off in [ADR-001](source_selection_adr.md).
+2. **Standalone substation approval:** I have synthetic test coverage but have not verified an actual public substation approval.
+3. **Missing source fields:** I leave unverified publication dates and project points `NULL`, with flags, instead of inventing metadata.
+4. **Production compatibility:** My `sql/001_signal_ingest.sql` is a proposed local staging contract, not confirmed IRIS production DDL.
+5. **Operational coverage:** I implemented bounded retries and pagination but have not proven exhaustive multi-page harvesting or tested every live HTTP 429/500 failure mode.
+6. **Reproducibility scope:** I passed 15 tests with one expected skip in a fresh clone, and the published GitHub Actions workflow tests the package on Ubuntu. Those checks are not a substitute for production PostGIS integration.
 
-Use `sql/validation.sql` against the candidate's local demonstration database, including duplicate-key, missing-field and SRID checks. Re-run `iris-sig14 --live --max-pages 1 --delay 2` **only with explicit local DB targeting** if the reviewer wants to repeat the successful first-page ingestion. Never bypass a 403 or other access restriction.
+## How I recommend validating the results
+
+I include [`sql/validation.sql`](../sql/validation.sql) to inspect duplicates, missing metadata, geometry SRIDs and quality flags. I recommend running the offline fixture mode first. For a local database test, a reviewer should point `DATABASE_URL` at **their own** instance—not a shared or production database—and never bypass an HTTP access restriction.
