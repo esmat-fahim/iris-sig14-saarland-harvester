@@ -30,3 +30,9 @@ UVP HTML search (provider=sl, bounded pages)
 - Public project descriptions contain ambiguous place names (GreenSteel EAF 'Dillingen' detail says 'Völklingen'). Preserve and flag for manual review.
 - Exact IRIS production table schema unknown. Local DDL is proposed, not authoritative. The sink cannot be run against a different schema without adapting fields.
 - UVP-Verbund does not cover all approvals, and this implementation does not parse attached PDFs.
+
+## Decision refinement: original Geoportal is reachable but its checked HTML datasets are inventories
+
+The candidate has now accessed the original `geoportal.saarland.de` OGC API Features HTML collections (BImSchG installations and IED installations). They expose identifiable facilities and geographic attributes, but a notice-level approval date/decision is not established for those features. The Geoportal applications catalogue separately links an **external UVP-Verbund** approval application. Pattern B is retained by scraping the officially linked UVP HTML rather than treating facility inventory as a legal approval. This is documented more comprehensively in `docs/source_selection_adr.md`. The source decision must be reconsidered if IRIS identifies a specific native Geoportal notice selector/collection.
+
+The Mac-based candidate has also executed live UVP HTML and real local PostgreSQL 16/PostGIS 3.4 loading; original raw-HTML regression snapshot and a standalone substation approval are still outstanding.

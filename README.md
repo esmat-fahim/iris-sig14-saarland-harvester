@@ -10,6 +10,8 @@ https://www.uvp-verbund.de/freitextsuche?category=chemie%3Banlagen%3Bbauvorhaben
 
 The exact observed search URLs, UUIDs, visible dates and source limitation are documented in [`docs/source_verification.md`](docs/source_verification.md). The site is a justified alternative, *not* a claim that `geoportal.saarland.de` itself exposes these records.
 
+**Why an alternative host?** The original Geoportal is accessible and exposes HTML industrial/IED facility features and a substation-capacity application, but no individual dated approval-notice stream was verified in the inspected pages. Crucially, its catalogue lists **UVP-Verbund (extern)** for approval proceedings. We chose that official *linked* HTML publication source for legal approval signals, while keeping Geoportal facility inventory separate from approvals. See **[ADR-001: approval source selection](docs/source_selection_adr.md)** for observed endpoints, alternatives rejected, risks and the condition for revisiting this decision. This is a justified choice under the assignment's alternative-source clause, but still needs IRIS reviewer confirmation if a particular native Geoportal feed was intended.
+
 **Reproducibility distinction:** The public listing and three project details were verified through available web retrieval; runtime direct HTTP was unavailable in the execution environment. The test fixtures reconstruct representative HTML structure and must not be presented as downloaded original DOM. The candidate subsequently executed a live Saarland HTML search and local PostgreSQL/PostGIS ingestion on their Mac on 2026-10-28; see [`docs/local_execution_evidence.md`](docs/local_execution_evidence.md). Actual raw HTML snapshot capture is still pending and is not included in the reconstructed fixtures.
 
 ## Data flow
@@ -169,3 +171,22 @@ The capture requests exactly **one Saarland search page** and at most **three el
 The `test_real_live_html_selector_regression` test is **skipped** until `tests/fixtures/live_uvp/manifest.json` exists. Once captured, it checks the file checksums, parses the saved actual DOM, compares discovered/eligible counts to the capture manifest, and exercises detail normalization without a network request. A skip does **not** mean the true DOM has been tested.
 
 **Before publishing the captured snapshot**, inspect the downloaded HTML and ensure redistribution is appropriate, including reviewing public personal/contact data. If sharing full source HTML is not appropriate, keep it local and document it as candidate-held test evidence rather than silently replacing it with a reconstructed example. The command does not claim any standalone substation approval was found; real electrical substation approval coverage is still outstanding.
+
+## Candidate live evidence: review and commit (not yet uploaded)
+
+The successful candidate-run sample and quality report exist **only on the candidate's Mac until committed**. Do not substitute the hand-transcribed examples for these genuine files. In the repository root:
+
+```bash
+# Review the actual output for unexpected sensitive material before publication.
+python -m json.tool samples/live_quality.json
+head -n 1 samples/live_output.jsonl
+# Confirm both belong to your successful live run; then explicitly stage only these:
+git add samples/live_output.jsonl samples/live_quality.json
+git commit -m "Add candidate live UVP ingestion output and quality report"
+git push origin main
+pytest -q -rs
+```
+
+`tests/test_live_evidence.py` automatically checks consistency of those two files *when present*, but skips in CI until they have been committed. If one is present without the other, the test fails. Re-running the live harvester after output capture may overwrite the report, so review the final pair together. Neither file should contain database credentials; verify before committing.
+
+To complete **real HTML regression coverage**, run the capture documented above on the candidate Mac and ensure `pytest -q -rs` reports that `test_real_live_html_selector_regression` is no longer skipped. Captured HTML may include public personal/contact information; review it before deciding whether to check the snapshots into a public repository. An uncommitted local capture is evidence of the candidate's test but is not reproducible by a remote reviewer.

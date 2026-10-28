@@ -31,3 +31,11 @@
 ## Scope completeness
 - [ ] Find and verify a real, standalone Saarland power-substation approval from an authoritative dated publication; current substation fixture is synthetic.
 - [ ] Validate OpenSpec against the installed CLI/version and record the outcome.
+
+## Reviewer evidence and architecture decision
+- [x] Document why original Geoportal facility HTML cannot automatically be treated as approval notices; record the UVP-Verbund external-link decision and risks in ADR-001.
+- [x] Record candidate's direct HTTP 200 checks of Geoportal OGC API Features industrial-installation lists without inventing approval dates.
+- [x] Update quality handoff documentation to reflect candidate's successful live HTML/PostGIS runs rather than obsolete inaccessible-runtime wording.
+- [x] Add optional automated consistency validation for the two candidate-generated live JSONL/report artifacts.
+- [ ] Review and commit both candidate-generated `samples/live_output.jsonl` and `samples/live_quality.json` from the Mac; they are not accessible in the authoring environment.
+- [ ] Capture actual UVP HTML on the Mac, review potential personal information, pass the non-skipped HTML regression test, and determine what may be redistributed.

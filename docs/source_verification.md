@@ -36,3 +36,7 @@ The public source was readable through a web retrieval service, but direct conta
 - The catalogue alone does *not* establish a native dated HTML list of industrial/substation approval notices on `geoportal.saarland.de`. No direct approved-project signal is manufactured from map layers or application metadata.
 - `python -m iris_sig14.geoportal` implements a direct **public-HTML source check** for these applications. Unit tests use **minimal reconstructed fixtures**, not authentic HTML downloads. The candidate ran the live check on macOS and observed both application links; see `docs/local_execution_evidence.md`. The reviewed source snapshot/report may be committed separately.
 - Source reconnaissance is separate from the `uvp_verbund_sl_html` approval adapter and intentionally performs no staging writes.
+
+## Engineering decision record and deeper native Geoportal inspection
+
+The source-selection justification, alternatives, trade-offs and acceptance risk are centralized in [`source_selection_adr.md`](source_selection_adr.md). The candidate also successfully requested HTML OGC API Features records from the **original** Geoportal's `Immissionsschutz:BImsch_Anlagen` and `Immissionsschutz:IED_Anlagen` collections; these showed facility inventory fields but no verified individual approval dates. This proves the original domain is accessible and useful for potential location enrichment, **not** that it serves the required event stream. Do not misstate the selected UVP-Verbund source as the original Geoportal host.
