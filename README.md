@@ -1,194 +1,97 @@
-# IRIS-SIG-14 — Saarland approval signal harvester
+# IRIS-SIG-14 — Saarland Approval Signal Harvester
 
-I built this Python **Pattern B (HTML) ETL pipeline** for the IRIS-SIG-14 technical assignment. My implementation discovers relevant Saarland approval notices, normalizes their attributes, generates public-source JSONL and quality reports, and can load records idempotently into a local PostgreSQL 16/PostGIS 3.4 staging table.
+I built a Python **Pattern B (HTML) ETL pipeline** to discover Saarland approval notices, normalize and validate them, generate JSONL/quality reports, and load records idempotently into PostgreSQL 16/PostGIS 3.4.
 
-I have included installation and configuration instructions, automated tests, reconstructed test fixtures, real public-source examples, validation SQL, OpenSpec artifacts, and an engineering decision record. I do not include database credentials or claim access to the private IRIS production schema.
+## Source and engineering decision
 
-## Why I selected UVP-Verbund rather than scraping approvals directly from Geoportal Saarland
+The brief specifies [Saarland Geoportal](https://geoportal.saarland.de). I tested its HTML application catalogue and industrial-installation datasets; they were accessible, but I did not verify an HTML listing of individual dated **approval decisions** in the pages inspected. Existing facilities and substation capacity are not, by themselves, evidence of new approvals.
 
-I began with the endpoint specified in the brief, [Geoportal Saarland](https://geoportal.saarland.de). I inspected its public HTML application catalogue and substation-capacity application, then queried its own OGC API Features HTML listings for industrial facilities. Those direct requests succeeded: the observed pages advertised **632 BImSchG facilities** and **72 IED facilities**. They provided facility names, identifiers, addresses, coordinates and links to government information, but I did not verify a dated stream of individual restructuring or substation **approval decisions** in the surfaces I inspected.
+Because Geoportal officially lists **UVP-Verbund (extern)** for environmental proceedings, I selected its public [Saarland-filtered HTML search](https://www.uvp-verbund.de/freitextsuche?category=chemie%3Banlagen%3Bbauvorhaben%3Benergie%3Bverarbeitung&provider=sl&toggle_procedure=), with `provider=sl`. I retain each notice's original ID and URL and do not claim to scrape approval events directly from Geoportal. I would confirm with IRIS if a specific native Geoportal approval feed was intended.
 
-I did **not** conclude that the original website is unavailable or that no other suitable dataset can exist on it. Rather, I distinguished *facility inventory* from *approval events*: a mapped industrial plant or substation is not evidence of a newly issued permit.
+**Full rationale:** [ADR-001](docs/source_selection_adr.md) · [Source verification](docs/source_verification.md) · [Direct Geoportal check](samples/geoportal_source_check.json)
 
-The Geoportal application catalogue explicitly lists **UVP-Verbund (extern)** as a linked environmental-proceedings application. I therefore chose the official UVP-Verbund **HTML** Saarland search as the source of approval notices:
+## Setup and run
 
-https://www.uvp-verbund.de/freitextsuche?category=chemie%3Banlagen%3Bbauvorhaben%3Benergie%3Bverarbeitung&provider=sl&toggle_procedure=
-
-I restrict the search to Saarland using `provider=sl` and preserve each notice's original URL and source identifier. I successfully ingested three public GreenSteel approval records from that source. This is my documented alternative-source decision under the assignment's allowance for justified alternatives; I would confirm with IRIS whether a specific native Geoportal approval feed was intended.
-
-**Detailed rationale:** [ADR-001 — Approval source selection](docs/source_selection_adr.md). My source evidence and observed URLs are in [source verification](docs/source_verification.md).
-
-## How my pipeline works
-
-```text
-UVP-Verbund Saarland public HTML search (provider=sl)
-    -> bounded pagination and project detail HTML
-    -> extraction: source UUID, title, URL, dates and description
-    -> Saarland + target-approval classification
-    -> validation and normalization
-    -> project coordinate transformation only when supported
-    -> JSONL + concise quality report
-    -> optional PostgreSQL/PostGIS transactional, idempotent upsert
-```
-
-I separated the implementation into focused modules:
-
-| Path | What it does |
-|---|---|
-| `src/iris_sig14/source.py` | Retrieves and parses public listing/detail HTML, applies request limits, retry rules and pagination |
-| `src/iris_sig14/normalize.py` | Classifies notices, validates dates and coordinates, and assigns quality flags |
-| `src/iris_sig14/pipeline.py` | Runs the ETL and prepares reports |
-| `src/iris_sig14/store.py` | Writes to SQLite demonstration storage or PostgreSQL/PostGIS with conflict-safe upserts |
-| `src/iris_sig14/cli.py` | Provides the `iris-sig14` command |
-| `src/iris_sig14/geoportal.py` | Inspects the **original** Geoportal's public HTML applications catalogue without writing approval records |
-| `src/iris_sig14/capture_live.py` | Saves authentic UVP HTML snapshots and a checksum manifest for offline selector regression testing |
-| `sql/001_signal_ingest.sql` | Defines my **proposed local** staging schema |
-| `sql/validation.sql` | Checks duplicates, missing metadata, quality flags and geometry SRIDs |
-| `openspec/` | Contains my proposal, specification, design and tracked tasks |
-
-## Installation and configuration
-
-I used **Python 3.12** locally; the package requires Python 3.11 or newer. To create a fresh environment, I use:
+I used Python 3.12; **Python 3.11+** is required. Dependencies are in `pyproject.toml` and optional settings are described in `.env.example`. No credentials are committed.
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate                 # Windows PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -e '.[test]'
 pytest -q -rs
 ```
 
-On Windows PowerShell, the activation command is `.venv\Scripts\Activate.ps1`. My dependencies are declared in `pyproject.toml`, and configurable example values are in `.env.example`. I keep local credentials outside version control; `.env` and generated package metadata are ignored.
-
-### Reproduce my fixture-based demonstration
-
-I can run the offline ETL without network access or a PostgreSQL server:
+To run a **complete offline ETL** without network access or PostgreSQL:
 
 ```bash
 unset DATABASE_URL
 iris-sig14 --fixtures tests/fixtures --sqlite-demo demo.sqlite3 \
-  --output /tmp/iris-sig14-fixture-output.jsonl \
-  --report /tmp/iris-sig14-fixture-quality.json
+  --output /tmp/iris-fixture-output.jsonl \
+  --report /tmp/iris-fixture-report.json
 ```
 
-On an initially empty SQLite demonstration database, I observed **four eligible unique records written**. Repeating the same run produced **zero writes and four unchanged records**, demonstrating duplicate-safe re-execution. One of those fixture records is an **explicitly synthetic** substation example; it is not a public permit.
+Run that command twice against a **fresh** `demo.sqlite3` database. I observed **4 records written** initially, then **0 written / 4 unchanged**, demonstrating idempotency. The fixtures include one explicitly **synthetic substation** case.
 
-### Run a bounded live HTML search
-
-I use the following command to retrieve real notices without connecting to a database:
+To collect **live notices** without database writes:
 
 ```bash
 unset DATABASE_URL
 iris-sig14 --live --max-pages 1 --delay 2 \
-  --output /tmp/iris-sig14-live-output.jsonl \
-  --report /tmp/iris-sig14-live-quality.json
+  --output /tmp/iris-live-output.jsonl \
+  --report /tmp/iris-live-report.json
 ```
 
-I intentionally write ad hoc re-runs to `/tmp` so I do not overwrite the committed evidence in `samples/live_output.jsonl` and `samples/live_quality.json`. The source is restricted to `www.uvp-verbund.de`, with request timeouts, a delay, and bounded retry/backoff for 429/5xx. I do not bypass 403 responses or scrape protected endpoints. The parser may require maintenance if the source changes its HTML.
+Live output varies as the source changes. HTTP requests use a domain allowlist, timeouts, bounded retries, and polite delays; access controls are not bypassed. Temporary output paths avoid overwriting committed evidence.
 
-### Reproduce my local PostgreSQL/PostGIS setup
+### Optional PostgreSQL/PostGIS demonstration
 
-I tested against **PostgreSQL 16 + PostGIS 3.4** using Docker. I use a locally chosen password, not a credential committed to this repository:
+With Docker, I used the following **local-only** PostgreSQL 16/PostGIS 3.4 setup:
 
 ```bash
-export POSTGRES_PASSWORD='choose-your-own-local-password'
+export POSTGRES_PASSWORD='choose-a-local-password'
 docker compose up -d db
 docker compose exec -T db psql -U iris_demo -d iris_demo < sql/001_signal_ingest.sql
 
-export DATABASE_URL="postgresql+psycopg://iris_demo:$POSTGRES_PASSWORD@localhost:5434/iris_demo"
+export DATABASE_URL="postgresql+psycopg://iris_demo:${POSTGRES_PASSWORD}@localhost:5434/iris_demo"
 iris-sig14 --fixtures tests/fixtures \
-  --output /tmp/iris-sig14-pg-output.jsonl \
-  --report /tmp/iris-sig14-pg-quality.json
+  --output /tmp/iris-pg-output.jsonl \
+  --report /tmp/iris-pg-report.json
 
 docker compose exec -T db psql -U iris_demo -d iris_demo < sql/validation.sql
 ```
 
-I also used a separate local `iris_live` database for actual UVP records, so I did not mix those records with synthetic fixtures. **I have not verified the private IRIS production table definition**: `sql/001_signal_ingest.sql` is my proposed local contract, not an authorized replacement for a production schema. I would reconcile it before loading into any shared database.
+If the password contains URL-special characters, URL-encode it in `DATABASE_URL`. The DDL is a **proposed local** `iris_staging.signal_ingest` schema, not a verified IRIS production contract.
 
-## Field mapping and data quality
+## Field mapping and quality rules
 
-I apply the following rules rather than inferring missing facts:
+- **Identity:** original UVP `docuuid`, source URL and `source_system`; content-hash-guarded transactional upsert prevents repeated writes.
+- **Dates:** listing, decision, and publication dates are distinct. I leave unverified `publication_date` as `NULL` with a quality flag.
+- **Geometry:** only verified project coordinates are converted to **EPSG:25832**; otherwise geometry remains `NULL`. I do not infer site points from ministry addresses or municipality centroids.
+- **Scope:** I filter for Saarland heavy-industrial restructuring and substation approval signals, preserving source context and flagging ambiguity.
 
-| Destination field | My mapping rule |
-|---|---|
-| `source_system` | `uvp_verbund_sl_html` |
-| `source_id` | The original UVP `docuuid` |
-| `title` | The linked project title |
-| `source_url` | The public detail-page URL |
-| `signal_type` | Classified as heavy-industrial restructuring approval or power-substation approval when supported by the notice |
-| `listing_date` | Date shown in the search listing; **not automatically a publication date** |
-| `decision_date` | Explicit decision date from the detail page |
-| `publication_date` | Explicit publication date if available; otherwise `NULL` with a quality flag |
-| `location_text` | Project-place text, not the authority's contact address |
-| `geom` | Verified project point transformed to EPSG:25832 when sufficient source coordinates exist; otherwise `NULL` |
-| `source_payload` | Source context and provenance |
-| `quality_flags` | Missing or conflicting metadata requiring review |
-| `content_hash` | SHA-256 of normalized content to avoid rewriting unchanged records |
+Detailed behavior is in the [OpenSpec requirements](openspec/changes/add-saarland-signal-harvester/specs/saarland-signal-ingestion/spec.md) and [design](openspec/changes/add-saarland-signal-harvester/design.md).
 
-I preserve listing, decision and publication dates separately. For example, **GreenSteel DRI Dillingen** has a search-listing date of 2025-02-21 and a decision date of 2025-01-29; I did not manufacture a publication date. I also flag the **GreenSteel EAF Dillingen** record because the detail text refers to **Völklingen**.
+## Evidence and tests
 
-I do not fabricate coordinates from municipality centroids or the ministry's Saarbrücken contact address. My synthetic spatial test exercises conversion from WGS84 to EPSG:25832; the three verified live GreenSteel records have `NULL` geometry because I could not verify project-specific point coordinates.
+On **28 October 2026**, I retrieved **10 live notices**, selected **3 GreenSteel industrial approvals**, and ingested those into local PostgreSQL/PostGIS. A repeated load reported **0 written / 3 unchanged**.
 
-## Actual live results and quality report
+- [Actual live JSONL (3 approvals)](samples/live_output.jsonl) · [Live quality report](samples/live_quality.json)
+- [Fixture output](samples/fixture_output.jsonl) · [Fixture quality report](samples/quality_report.json)
+- [Validation SQL](sql/validation.sql) · [Execution evidence](docs/local_execution_evidence.md) · [QA notes](docs/quality_notes.md)
 
-I ran the live harvester from my Mac on **2026-10-28**, then inserted three relevant GreenSteel records into local PostGIS. I tested a repeated load and saw **`written=0, unchanged=3`**.
+The live report records **3 unverified publication dates, 3 unresolved project points, and 1 site-description conflict**.
 
-The real, generated outputs are committed here:
+I passed **16 automated tests locally**, including a regression test with genuinely captured public HTML. I also tested a **fresh GitHub clone**: installation succeeded, **15 tests passed and 1 was expectedly skipped**, and the full offline ETL ran idempotently. GitHub Actions tests the published project on Ubuntu/Python 3.11 and 3.12.
 
-- [Live JSONL output](samples/live_output.jsonl) — three observed public approval signals.
-- [Live quality report](samples/live_quality.json) — one page, ten discovered results, three eligible, seven filtered, no reported fetch or malformed-record failures.
-- [Public verified examples](samples/public_verified_examples.jsonl) — separate **hand-transcribed** public-source examples, not a raw harvester run.
-- [Fixture quality report](samples/quality_report.json) and [fixture output](samples/fixture_output.jsonl) — reconstructed/synthetic test evidence, not real approval coverage.
+I keep genuine downloaded HTML snapshots **local only** because redistribution has not been cleared. Thus the real-DOM regression test is skipped in a clean clone, while the published reconstructed fixtures and live-output consistency tests remain runnable.
 
-My live quality report identifies **three unresolved project points**, **three unverified publication dates**, **one title/description site conflict**, and **zero within-batch duplicates**. These are explicit data-quality findings, not silent substitutions. I describe the local execution in [local execution evidence](docs/local_execution_evidence.md) and the limitations in [quality notes](docs/quality_notes.md).
+## Known limitations
 
-## Testing and reproducibility
+- The live sample demonstrates **industrial approvals**, not a verified **standalone substation approval**; that case is covered only by a synthetic fixture.
+- Verified project-point coordinates and explicit publication dates were unavailable for the three live records; missing values remain `NULL`.
+- I have not demonstrated exhaustive Saarland approval coverage, parsed all linked PDFs, or tested against IRIS's private production schema.
+- The selected source is the Geoportal's **linked UVP-Verbund application**, not a native Geoportal approval feed; see [ADR-001](docs/source_selection_adr.md).
 
-I reported **16 passing tests locally** on 2026-10-28, after downloading genuine UVP HTML consisting of one listing page and three eligible detail pages. The live capture discovered ten listings and three eligible records. I tested the saved DOM using:
-
-```bash
-unset DATABASE_URL
-python -m iris_sig14.capture_live \
-  --directory tests/fixtures/live_uvp \
-  --max-details 3 --delay 2
-pytest -q -rs
-```
-
-The capture creates a `manifest.json` with URLs, retrieval time and SHA-256 checksums. I keep the full downloaded HTML in `tests/fixtures/live_uvp/` **only on my Mac**, rather than redistributing whole pages. A limited contact-detail scan found email/contact links in the detail pages; that scan is not a complete privacy or licensing audit. The directory is excluded by `.gitignore`.
-
-As a result, **a fresh checkout/CI run may skip the genuine-DOM regression test** because the local snapshots are absent. The representative reconstructed HTML tests and the committed live-output consistency check still run. Reviewers can capture fresh public HTML themselves with the command above, subject to site access and source changes. I do not present my reconstructed fixture HTML as an original downloaded copy.
-
-I also checked the assigned original Geoportal directly:
-
-```bash
-python -m iris_sig14.geoportal \
-  --report samples/geoportal_source_check.json \
-  --save-html samples/geoportal_apps_snapshot.html
-```
-
-I committed the resulting [Geoportal source check](samples/geoportal_source_check.json). The HTML snapshot itself stays local. That inspection confirmed the official external UVP application and the Geoportal's substation-capacity application; it did not verify a native dated approval-notice listing in the inspected pages.
-
-## OpenSpec workflow
-
-I documented the design decisions and acceptance tasks in `openspec/changes/add-saarland-signal-harvester/`. To validate them with a compatible locally installed OpenSpec CLI, I would run:
-
-```bash
-openspec validate add-saarland-signal-harvester
-```
-
-I have not recorded an independent successful OpenSpec CLI validation yet; this remains an open checklist item. The [OpenSpec task list](openspec/changes/add-saarland-signal-harvester/tasks.md) distinguishes completed work from remaining gaps.
-
-## Known limitations and follow-up work
-
-1. **Source scope:** My chosen UVP-Verbund HTML search is a justified, Geoportal-linked alternative, not a direct approval-notice feed on `geoportal.saarland.de`. I have not established exhaustive coverage of Saarland approvals or parsed all referenced PDFs.
-2. **Substation approval coverage:** The public live sample contains three steel-industry approvals, but I have **not yet independently verified a standalone Saarland power-substation approval**. The substation test case is synthetic.
-3. **Exact project geometry:** The three live records have no source-verified project points. I deliberately keep their geometry `NULL`.
-4. **Publication date provenance:** I do not substitute listing dates, decision dates or crawl timestamps for unverified publication dates.
-5. **Source resilience:** I have implemented bounded pagination and retry logic, but have not demonstrated exhaustive multi-page coverage or every live server-side failure condition.
-6. **Production integration:** My staging DDL and local PostGIS demonstration have not been checked against IRIS's private production schema.
-
-I consider the Python implementation, configuration, README, automated tests, sample output, validation queries, quality reporting and source-selection rationale part of this submission. I keep the unresolved source-coverage questions explicit rather than claiming that every acceptance criterion has been demonstrated.
 ## License
 
-I release the original code and associated project documentation that I have the right to license under the [MIT License](LICENSE). Copyright (c) 2026 Esmat Tariq Fahim.
-
-This license does **not** grant rights over third-party material, including Saarland Geoportal or UVP-Verbund website content, external datasets, and downloaded source HTML. Those materials remain subject to their respective rights and terms; the original HTML snapshots are not included in this repository.
+I license my original code and documentation under [MIT](LICENSE). This does not license third-party website content, datasets, or downloaded HTML.
