@@ -6,3 +6,13 @@ __pycache__/
 *.sqlite3
 *.db
 *.log
+
+# Generated package metadata
+*.egg-info/
+
+# Candidate-local HTML snapshots (retained for offline DOM regression)
+tests/fixtures/live_uvp/
+samples/geoportal_apps_snapshot.html
+
+# Ad hoc CLI output; curated live evidence remains committed separately
+samples/output.jsonl

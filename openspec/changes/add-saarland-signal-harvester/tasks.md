@@ -6,7 +6,7 @@
 - [x] Record distinct listing and decision dates, and explicitly mark publication dates unverified.
 - [x] Implement bounded live raw-HTML capture command, capture provenance manifest and conditional regression test.
 - [x] Run real public HTML capture on candidate Mac and locally pass the unskipped real-DOM regression test (candidate-reported `16 passed`; snapshots are local-only).
-- [ ] Review captured HTML for personal data and redistribution conditions; decide whether to commit a permissible minimized fixture or retain full pages privately.
+- [x] Decide evidence packaging: retain full raw HTML locally after limited contact-link scan; exclude snapshots from public Git because no comprehensive content/redistribution audit was performed.
 
 ## Ingestion
 - [x] Add config/CLI, HTTP host restrictions, retries, timeout and bounded pagination.
@@ -40,4 +40,4 @@
 - [x] Add optional automated consistency validation for the two candidate-generated live JSONL/report artifacts.
 - [x] Review and commit candidate-generated `samples/live_output.jsonl` and `samples/live_quality.json` from the Mac (commit `1f04f6e`).
 - [x] Capture actual UVP HTML on the Mac and pass non-skipped HTML regression test locally (candidate-reported 16 passed).
-- [ ] Inspect captured HTML and document the redistribution decision; do not automatically commit full source pages.
+- [x] Document limited HTML contact scan and the decision to exclude raw downloaded pages from public Git. Representative reconstructed fixtures remain public.
