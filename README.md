@@ -10,7 +10,7 @@ https://www.uvp-verbund.de/freitextsuche?category=chemie%3Banlagen%3Bbauvorhaben
 
 The exact observed search URLs, UUIDs, visible dates and source limitation are documented in [`docs/source_verification.md`](docs/source_verification.md). The site is a justified alternative, *not* a claim that `geoportal.saarland.de` itself exposes these records.
 
-**Reproducibility distinction:** The public listing and three project details were verified through available web retrieval; runtime direct HTTP was unavailable in the execution environment. The test fixtures reconstruct representative HTML structure and must not be presented as downloaded original DOM. Live integration and actual PostgreSQL integration are pending; no unrestricted access is assumed.
+**Reproducibility distinction:** The public listing and three project details were verified through available web retrieval; runtime direct HTTP was unavailable in the execution environment. The test fixtures reconstruct representative HTML structure and must not be presented as downloaded original DOM. The candidate subsequently executed a live Saarland HTML search and local PostgreSQL/PostGIS ingestion on their Mac on 2026-10-28; see [`docs/local_execution_evidence.md`](docs/local_execution_evidence.md). Actual raw HTML snapshot capture is still pending and is not included in the reconstructed fixtures.
 
 ## Data flow
 
@@ -37,7 +37,7 @@ iris-sig14 --fixtures tests/fixtures --sqlite-demo demo.sqlite3 \
 
 To run without a SQLite demo file, simply omit `--sqlite-demo`.
 
-## Optional: live HTML retrieval (not tested from this restricted environment)
+## Optional: live HTML retrieval (candidate-tested on macOS, 2026-10-28)
 
 ```bash
 iris-sig14 --live --max-pages 2 --delay 2 \
@@ -113,15 +113,15 @@ docs/              source verification and known coverage limitations
 ## Status and known limitations
 
 1. Unit/fixture tests: runnable offline and intended to be passed; duplicate re-runs proven with SQLite.
-2. **Live raw DOM and rate-limit behavior:** not exercised by the authoring environment; selector robustness requires one authorized, throttled local smoke test.
-3. **PostGIS integration:** SQL prepared but not executed against an actual database in this environment.
+2. **Genuine HTML regression fixture:** candidate successfully retrieved a live HTML page, but the actual raw DOM has not yet been saved as a reviewed, reproducible fixture. Live 429 behavior is not demonstrated.
+3. **PostGIS integration:** candidate reported successful local PostgreSQL 16/PostGIS 3.4 loads, SQL verification, null geometries for public records, synthetic EPSG:25832 point, and an unchanged rerun. These observations are candidate-supplied, not independently reproduced in the authoring environment.
 4. **Completeness:** UVP-Verbund covers only proceedings published there, not every industrial planning notification or every substation. Current sample provides real *steel* records but **no independently confirmed public substation approval**; substation path has synthetic test coverage only.
 5. **Geolocation:** no guessed project points. Null geometries are expected when source points are unavailable. Geocoding could be added only with authoritative project identifiers/locations and accuracy flags.
 6. **Publication dates:** not reconstructed from the decision date, file timestamp, crawl date or search listing date.
 
 ## OpenSpec workflow
 
-Spec artifacts are provided in `openspec/changes/add-saarland-signal-harvester/` and follow `proposal -> specs and design -> tasks -> apply`. If OpenSpec CLI is installed locally: `openspec validate add-saarland-signal-harvester` (CLI syntax/version may vary). Installing: `npm install -g @fission-ai/openspec`, then run `openspec init` only if your editor's integration needs initialization; don't overwrite existing specs. The three unchecked tasks in `tasks.md` reflect outstanding live/PostGIS verification, not concealed completions.
+Spec artifacts are provided in `openspec/changes/add-saarland-signal-harvester/` and follow `proposal -> specs and design -> tasks -> apply`. If OpenSpec CLI is installed locally: `openspec validate add-saarland-signal-harvester` (CLI syntax/version may vary). Installing: `npm install -g @fission-ai/openspec`, then run `openspec init` only if your editor's integration needs initialization; don't overwrite existing specs. See `tasks.md` for explicit remaining source-fixture, standalone substation, and production-schema verification tasks.
 
 ## Reviewer reproducibility
 
@@ -150,3 +150,22 @@ pytest -q
 ```
 
 **Data interpretation:** An existing substation or grid feed-in capacity is **not** an approval. The Geoportal catalogue does not itself supply a verified dated HTML list of the required approval notices. Consequently this check does not insert anything into `iris_staging.signal_ingest`, and the current approval ingestion remains on Geoportal's official external UVP-Verbund destination. Do not replace these provenance fields or label infrastructure entries as approved projects. A direct Geoportal approval adapter should be added only after verifying a genuine public approval listing and its publication dates.
+
+
+## Genuine live HTML regression capture (next step)
+
+Previously committed `tests/fixtures/listing*.html` files are **reconstructed**, not verbatim downloaded pages. The new command captures the HTML returned by the real official UVP site, from a network-enabled machine, without modifying either PostGIS database:
+
+```bash
+unset DATABASE_URL
+python -m iris_sig14.capture_live \
+  --directory tests/fixtures/live_uvp \
+  --max-details 3 --delay 2
+pytest -q -rs
+```
+
+The capture requests exactly **one Saarland search page** and at most **three eligible project detail pages**, with a delay between detail requests and the existing HTTPS host allowlist. It saves a first-page snapshot, individual detail-page snapshots, and `manifest.json` with the actual captured URLs, timestamp (UTC), byte lengths, and SHA-256 checksums. No HTML is fabricated. If no records can be parsed, the capture fails rather than passing silently. No credentials are required.
+
+The `test_real_live_html_selector_regression` test is **skipped** until `tests/fixtures/live_uvp/manifest.json` exists. Once captured, it checks the file checksums, parses the saved actual DOM, compares discovered/eligible counts to the capture manifest, and exercises detail normalization without a network request. A skip does **not** mean the true DOM has been tested.
+
+**Before publishing the captured snapshot**, inspect the downloaded HTML and ensure redistribution is appropriate, including reviewing public personal/contact data. If sharing full source HTML is not appropriate, keep it local and document it as candidate-held test evidence rather than silently replacing it with a reconstructed example. The command does not claim any standalone substation approval was found; real electrical substation approval coverage is still outstanding.
