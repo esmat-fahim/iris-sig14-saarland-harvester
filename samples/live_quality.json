@@ -1,0 +1,20 @@
+{
+  "mode": "live",
+  "source": "https://www.uvp-verbund.de/freitextsuche?category=chemie%3Banlagen%3Bbauvorhaben%3Benergie%3Bverarbeitung&provider=sl&toggle_procedure=",
+  "pages": 1,
+  "discovered": 10,
+  "eligible": 3,
+  "filtered": 7,
+  "fetch_failures": [],
+  "malformed": [],
+  "quality_flags": {
+    "unresolved_project_point": 3,
+    "publication_date_not_verified": 3,
+    "title_description_site_conflict": 1
+  },
+  "duplicates_in_batch": 0,
+  "db": {
+    "written": 0,
+    "unchanged": 3
+  }
+}
