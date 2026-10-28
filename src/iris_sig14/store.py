@@ -15,8 +15,13 @@ INSERT INTO iris_staging.signal_ingest (
 ) VALUES (
  :source_system, :source_id, :signal_type, :title, :publication_date,
  :listing_date, :decision_date, :source_url, :location_text,
- CASE WHEN :easting IS NULL OR :northing IS NULL THEN NULL
-      ELSE ST_SetSRID(ST_MakePoint(:easting, :northing), 25832) END,
+ -- Cast before checking NULL: psycopg sends untyped NULL parameters and
+ -- PostgreSQL cannot infer their types from an "IS NULL" expression.
+ CASE WHEN CAST(:easting AS double precision) IS NULL
+           OR CAST(:northing AS double precision) IS NULL THEN NULL
+      ELSE ST_SetSRID(ST_MakePoint(
+          CAST(:easting AS double precision),
+          CAST(:northing AS double precision)), 25832) END,
  CAST(:quality_flags AS text[]), CAST(:source_payload AS jsonb), :content_hash
 )
 ON CONFLICT (source_system, source_id)
