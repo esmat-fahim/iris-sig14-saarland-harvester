@@ -1,26 +1,25 @@
 # Proposal: add-saarland-signal-harvester
 
 ## Why
-The IRIS-SIG-14 exercise requests public HTML approval notices for heavy-industry transformation and electricity substations in Saarland. The supplied `https://geoportal.saarland.de` is verifiably a GDI catalogue/map portal, not a verified standalone HTML publication list. The UVP-Verbund search provides public HTML project records in Saarland and actual steel-transition approvals.
+I am addressing the IRIS-SIG-14 request for public HTML approval notices for heavy-industry transformation and electricity substations in Saarland. I inspected the supplied `https://geoportal.saarland.de`, including its HTML facility collections, but did not verify a native dated approval-notice list in those pages. I selected its officially linked UVP-Verbund HTML search for identifiable Saarland proceedings and steel-transition approvals.
 
-## What Changes
-- Add a configurable and bounded UVP-Verbund Saarland HTML acquisition adapter (Pattern B).
-- Parse canonical project UUIDs, titles, listing dates, detail-page decision dates and provenance.
-- Strictly filter Saarland and two signal categories; do not conflate publication, update/listing, and approval dates.
-- Convert verified *project coordinates* to EPSG:25832; leave unresolved points null with explicit flags.
-- Provide deterministic JSONL output and a PostgreSQL/PostGIS staging contract using identity-based upsert.
-- Produce fixture tests, SQLite offline demonstration and visible QA report.
+## What I implemented
+- I added a configurable and bounded UVP-Verbund Saarland HTML acquisition adapter (Pattern B).
+- I parse canonical project UUIDs, titles, listing dates, detail-page decision dates and provenance.
+- I filter Saarland and two signal categories; do not conflate publication, update/listing, and approval dates.
+- I convert verified *project coordinates* to EPSG:25832; leave unresolved points null with explicit flags.
+- I provide deterministic JSONL output and a PostgreSQL/PostGIS staging contract using identity-based upsert.
+- I produce fixture tests, SQLite offline demonstration and visible QA report.
 
 ## Capabilities
 ### New Capabilities
 - `saarland-signal-ingestion`: verified-source HTML acquisition, normalization, quality-gated spatial staging.
 
 ## Impact
-Self-contained `iris_sig14` package, local `sql/` DDL, CLI, tests, sample artifacts, README.
-No changes to, or rights in, the IRIS reference repository. No production connection is configured.
+I provide a self-contained `iris_sig14` package, local `sql/` DDL, CLI, tests, sample artifacts and README. I have not changed the IRIS reference repository, claimed rights over its contents, or configured a production connection.
 
-## Out of Scope
-- Web browser bypass, login, CAPTCHA handling, or restricted-source scraping.
-- PDF text extraction and municipal gazette/PDF discovery.
-- Guessing precise locations from city names or an authority mailing address.
-- Mapping onto unknown private IRIS `signal_ingest` schema without a contract.
+## What I excluded
+- I do not bypass browser restrictions, login, CAPTCHAs or access controls.
+- I have not implemented PDF extraction or comprehensive municipal-gazette discovery.
+- I do not guess project coordinates from municipality names or an agency address.
+- I do not load data into an unknown private IRIS `signal_ingest` table without a schema contract.

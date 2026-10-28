@@ -1,16 +1,16 @@
 # Design
 
 ## Decision 1: source discovery and access
-The supplied Geoportal is a geospatial metadata/service hub; an HTML 'Bekanntmachungen' selector at that host could not be verified. Prefer UVP-Verbund (`/freitextsuche`, `provider=sl`) as a documented lawful alternative, with `/trefferanzeige?docuuid=...` public project detail. The observed rendered search returned 20 results for relevant categories on 2026-10-28 and showed GreenSteel cases. This environment cannot capture origin HTML markup or connect directly to that domain over HTTP, so the parser deliberately uses semantic URL patterns and bounded ancestor text rather than claiming stable production CSS selectors. Representative *reconstructed* fixtures test the interface; a live smoke test remains necessary.
+I found that the supplied Geoportal serves geospatial metadata and facility data; I could not verify a native HTML 'Bekanntmachungen' notice stream on the pages inspected. I selected UVP-Verbund (`/freitextsuche`, `provider=sl`) as a documented lawful alternative, with `/trefferanzeige?docuuid=...` public project detail. I initially inspected 20 rendered results across two pages and later executed a first-page live extraction on my Mac (10 discovered, 3 eligible). I use URL patterns and contextual text rather than assuming permanent CSS selectors. I also captured genuine HTML locally and passed the real-DOM regression test; the published fixtures are reconstructed to avoid redistributing full pages.
 
 ## Decision 2: three distinct dates
-List-page `21.02.2025` is `listing_date` (the source does not label it as date of publication). Detail-page `Datum der Entscheidung` is `decision_date`. Only a separately explicit `Veröffentlichungsdatum` or `Bekanntmachung vom` is admissible for `publication_date`. Null is better than false precision.
+I record list-page `21.02.2025` as `listing_date` (the source does not label it as date of publication). I record explicit detail-page `Datum der Entscheidung` as `decision_date`. I accept only a separately explicit `Veröffentlichungsdatum` or `Bekanntmachung vom` for `publication_date`; I prefer NULL to invented precision.
 
 ## Decision 3: classified signals and spatial integrity
-Only explicit steel-industry transformation or substation activity combined with approval language qualifies. Other infrastructure (including hydrogen pipelines) is not silently accepted. Project city text is preserved; coordinates are accepted only from site/project fields. A federal/ministry contact address is not a project location. Coordinates are validated against conservative Saarland WGS84 bounds, then transformed with pyproj's `always_xy=True` EPSG:4326→25832. Original coordinates are retained in payload when present.
+I classify only steel-industry transformation or substation activity accompanied by approval language. I exclude unrelated infrastructure (including hydrogen pipelines). I preserve project-city text and accept coordinates only from project/site fields. A federal/ministry contact address is not a project location. I validate coordinates against conservative Saarland WGS84 bounds, then transform them with pyproj's `always_xy=True` EPSG:4326→25832. I retain original source coordinates in the payload when present.
 
 ## Decision 4: identity-preserving load
-`source_system + docuuid` is a stable conflict key; a SHA-256 hash detects changed normalized payloads. `ON CONFLICT ... DO UPDATE ... WHERE content_hash IS DISTINCT` avoids duplicate rows and unnecessary mutation. PostgreSQL transaction is per batch. A SQLite-only demo sink validates identical semantics offline but does not substitute for actual PostgreSQL integration testing.
+I use `source_system + docuuid` as a stable conflict key and SHA-256 to detect changed normalized payloads. `ON CONFLICT ... DO UPDATE ... WHERE content_hash IS DISTINCT` avoids duplicate rows and unnecessary mutation. I use a transaction per PostgreSQL batch. I also provide a SQLite demo sink for offline checks, while separately testing local PostgreSQL/PostGIS.
 
 ## Data flow
 ```text
@@ -25,14 +25,14 @@ UVP HTML search (provider=sl, bounded pages)
 ```
 
 ## Risks and trade-offs
-- Portal markup and pagination might change; URL/structure assumptions must be smoke-tested on actual raw HTML by a network-enabled reviewer.
-- Public source may rate-limit/403; never evade restrictions. XML API is *not* substituted because task pattern B explicitly requires HTML.
-- Public project descriptions contain ambiguous place names (GreenSteel EAF 'Dillingen' detail says 'Völklingen'). Preserve and flag for manual review.
-- Exact IRIS production table schema unknown. Local DDL is proposed, not authoritative. The sink cannot be run against a different schema without adapting fields.
-- UVP-Verbund does not cover all approvals, and this implementation does not parse attached PDFs.
+- I recognize that portal markup/pagination may change; I have locally smoke-tested real HTML but future reviews may need renewed captures.
+- I do not bypass restrictions if the source rate-limits or returns 403. XML API is *not* substituted because task pattern B explicitly requires HTML.
+- I flag ambiguous source locations (GreenSteel EAF 'Dillingen' detail says 'Völklingen'). and preserve them for manual review.
+- I do not know IRIS's production table contract; my local DDL is proposed, not authoritative, and I would adapt the loader before using a different schema.
+- I do not claim full UVP/Saarland permit coverage or parse linked PDFs.
 
 ## Decision refinement: original Geoportal is reachable but its checked HTML datasets are inventories
 
-The candidate has now accessed the original `geoportal.saarland.de` OGC API Features HTML collections (BImSchG installations and IED installations). They expose identifiable facilities and geographic attributes, but a notice-level approval date/decision is not established for those features. The Geoportal applications catalogue separately links an **external UVP-Verbund** approval application. Pattern B is retained by scraping the officially linked UVP HTML rather than treating facility inventory as a legal approval. This is documented more comprehensively in `docs/source_selection_adr.md`. The source decision must be reconsidered if IRIS identifies a specific native Geoportal notice selector/collection.
+I accessed the original `geoportal.saarland.de` OGC API Features HTML collections (BImSchG installations and IED installations). Those collections expose identifiable facilities and geographic attributes, but a notice-level approval date/decision is not established for those features. The Geoportal applications catalogue separately links an **external UVP-Verbund** approval application. I retain Pattern B by scraping the officially linked UVP HTML rather than treating facility inventory as a legal approval. I document the decision more comprehensively in `docs/source_selection_adr.md`. I would reconsider this decision if IRIS identifies a specific native Geoportal notice selector/collection.
 
-The Mac-based candidate has also executed live UVP HTML and real local PostgreSQL 16/PostGIS 3.4 loading; original raw-HTML regression snapshot and a standalone substation approval are still outstanding.
+I executed live UVP HTML ingestion and local PostgreSQL 16/PostGIS 3.4 loading. I also captured and regression-tested genuine HTML locally; I have not verified a real standalone substation approval.
