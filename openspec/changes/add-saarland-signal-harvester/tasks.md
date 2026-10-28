@@ -19,3 +19,9 @@
 - [x] Generate representative public-source and fixture-only sample outputs and QA report.
 - [ ] Execute integration test against an actual PostgreSQL 16/PostGIS 3.4 instance (not installed in execution environment).
 - [ ] Reconcile local table contract with real IRIS production staging schema when provided.
+
+## Direct Geoportal source verification
+- [x] Inspect Geoportal public HTML applications listing, identify the UVP-Verbund external application and the substation capacity map.
+- [x] Add a no-database, safe direct-Geoportal HTML discovery command and reconstructed-fixture tests; prevent map inventory from being misclassified as approvals.
+- [ ] Execute the discovery command locally against real Geoportal HTML and archive a reviewed DOM/quality report.
+- [ ] Confirm whether any native Geoportal page actually carries required dated approvals before designing a direct approval adapter.

@@ -126,3 +126,27 @@ Spec artifacts are provided in `openspec/changes/add-saarland-signal-harvester/`
 ## Reviewer reproducibility
 
 Run the offline quick start twice, check `samples/quality_report.json`, inspect `samples/public_verified_examples.jsonl`, then optionally deploy the local DDL and execute `sql/validation.sql`. This demonstrates fail-closed parsing, traceability, idempotency, and explicit uncertainty without requiring IRIS credentials.
+
+## Source-specific check: original Saarland Geoportal (HTML)
+
+The brief names `https://geoportal.saarland.de`. The new **source reconnaissance** command directly inspects its public HTML applications catalogue, with no production credentials or DB writes:
+
+```bash
+python -m iris_sig14.geoportal \
+  --report samples/geoportal_source_check.json \
+  --save-html samples/geoportal_apps_snapshot.html
+```
+
+This command checks for **UVP-Verbund (extern)** (the Geoportal-linked official approvals portal) and **Kapazitäten der Umspannanlagen** (its substation/capacity map), and separately inspects the Geoportal-hosted substation application description. It produces a reviewable report. The raw snapshot is for local selector verification; inspect it before publishing or committing. Public accessibility and HTML structure must be rechecked on the candidate's machine.
+
+Offline regression test, with a **synthetic miniature HTML fixture** (not a genuine downloaded DOM):
+
+```bash
+python -m iris_sig14.geoportal \
+  --html-file tests/fixtures/geoportal_catalogue_sample.html \
+  --article-file tests/fixtures/geoportal_substation_article_sample.html \
+  --report samples/geoportal_fixture_check.json
+pytest -q
+```
+
+**Data interpretation:** An existing substation or grid feed-in capacity is **not** an approval. The Geoportal catalogue does not itself supply a verified dated HTML list of the required approval notices. Consequently this check does not insert anything into `iris_staging.signal_ingest`, and the current approval ingestion remains on Geoportal's official external UVP-Verbund destination. Do not replace these provenance fields or label infrastructure entries as approved projects. A direct Geoportal approval adapter should be added only after verifying a genuine public approval listing and its publication dates.

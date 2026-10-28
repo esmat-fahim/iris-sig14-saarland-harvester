@@ -27,3 +27,12 @@ The UVP record titled **GreenSteel EAF Dillingen** describes an electric arc fur
 
 ## Accessibility and test qualification
 The public source was readable through a web retrieval service, but direct container HTTP requests failed due disabled DNS/network. A raw-HTML DOM snapshot and live, code-executed scrape are NOT verified. Search-result HTML fixtures are structurally reconstructed from visible public content, not downloaded page-source captures. Additional synthetic substation test is plainly labelled. The UVP portal may also return 429 responses under repeated access; do not bypass. There is no evidence that published UVP coverage is exhaustive of all relevant industrial/substation permits.
+
+## Original Geoportal HTML reconnaissance (2026-10-28)
+
+- Public Geoportal applications listing: <https://geoportal.saarland.de/apps/>
+- Listed application **UVP-Verbund (extern)** links to approval proceedings (Geoportal catalogue application invocation ID 4169). This explains why an official approval-record harvester follows the portal's external link.
+- Listed application **Kapazitäten der Umspannanlagen** (invocation ID 7556), with direct Geoportal information page: <https://geoportal.saarland.de/article/Umspannanlagen_Kapazitaeten/>. The page describes mapped substations, operators and non-binding feed-in capacity metrics, **not new statutory approvals**.
+- The catalogue alone does *not* establish a native dated HTML list of industrial/substation approval notices on `geoportal.saarland.de`. No direct approved-project signal is manufactured from map layers or application metadata.
+- `python -m iris_sig14.geoportal` implements a direct **public-HTML source check** for these applications. Unit tests use **minimal reconstructed fixtures**, not authentic HTML downloads. The live check must be run from a network-enabled environment, after which the snapshot and report can substantiate the HTML-selector findings.
+- Source reconnaissance is separate from the `uvp_verbund_sl_html` approval adapter and intentionally performs no staging writes.
