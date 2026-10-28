@@ -1,0 +1,34 @@
+{
+  "source": "https://geoportal.saarland.de/apps/",
+  "mode": "geoportal_source_reconnaissance",
+  "applications_found": {
+    "approval_publications": {
+      "label": "UVP-Verbund (extern)",
+      "catalogue_link": "https://geoportal.saarland.de/mapbender/php/mod_invokeApplicationFromMetadata.php?id=4169",
+      "catalogue": "https://geoportal.saarland.de/apps/"
+    },
+    "substation_capacity_map": {
+      "label": "Kapazitäten der Umspannanlagen",
+      "catalogue_link": "https://geoportal.saarland.de/mapbender/php/mod_invokeApplicationFromMetadata.php?id=7556",
+      "catalogue": "https://geoportal.saarland.de/apps/"
+    }
+  },
+  "uvp_external_application_listed": true,
+  "substation_capacity_application_listed": true,
+  "substation_article_url": "https://geoportal.saarland.de/article/Umspannanlagen_Kapazitaeten/",
+  "substation_article_observations": {
+    "substation_topic_found": true,
+    "capacity_context_found": true,
+    "capacity_is_non_binding": true,
+    "approval_notice_observed": false
+  },
+  "approval_records_extracted_from_geoportal": 0,
+  "direct_html_approval_listing_verified": false,
+  "mapping_decision": "Do NOT load Geoportal map/application entries into iris_staging.signal_ingest. A mapped substation or capacity does not establish a new legal approval. UVP-Verbund is an external approval-publications application listed by Geoportal; retain separate source provenance when harvesting approvals there.",
+  "limitations": [
+    "Only the Geoportal applications catalogue and named substation article are checked.",
+    "No direct HTML approval-notice listing on geoportal.saarland.de has been verified.",
+    "The portal map viewer and potential WMS/WFS layer content are not harvested here."
+  ],
+  "evidence_mode": "live_public_html"
+}
